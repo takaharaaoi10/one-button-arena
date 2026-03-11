@@ -276,9 +276,8 @@ function Arena({ radius, combo, gameState, lastHit, config }) {
   const glow = combo>=9?"#ff375f":combo>=5?"#bf5af2":combo>=3?"#30d158":"#0a84ff";
 
   return (
-    <svg viewBox="0 0 400 400"
-      style={{ width:"100%", maxWidth:440, height:"auto", display:"block",
-               filter:`drop-shadow(0 0 ${combo*3+8}px ${glow}44)` }}>
+    <svg viewBox="0 0 400 400" className="arena-svg"
+      style={{ display:"block", filter:`drop-shadow(0 0 ${combo*3+8}px ${glow}44)` }}>
       <defs>
         <radialGradient id="bg"><stop offset="0%" stopColor="#0d1117"/><stop offset="100%" stopColor="#060809"/></radialGradient>
         <radialGradient id="rg"><stop offset="60%" stopColor="transparent"/><stop offset="100%" stopColor={`${glow}1a`}/></radialGradient>
@@ -573,13 +572,14 @@ export default function OneButtonArena() {
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:"100vh", background:"#04060a", display:"flex", flexDirection:"column",
+    <div style={{ width:"100vw", height:"100vh", background:"#04060a", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:FONT, userSelect:"none",
       overflow:"hidden", position:"relative" }}>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Russo+One&display=swap');
-        *{box-sizing:border-box}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body,#root{width:100%;height:100%;overflow:hidden;background:#04060a}
         @keyframes hitPop     {0%{transform:translateY(0) scale(.6);opacity:0}30%{transform:translateY(-8px) scale(1.3);opacity:1}100%{transform:translateY(-44px) scale(1);opacity:0}}
         @keyframes nearPop    {0%{transform:translateY(0) scale(.5) rotate(-4deg);opacity:0}35%{transform:translateY(-6px) scale(1.15) rotate(2deg);opacity:1}100%{transform:translateY(-38px);opacity:0}}
         @keyframes comboFlare {0%{transform:scale(.8);opacity:0}40%{transform:scale(1.4);opacity:1}100%{transform:scale(1.1);opacity:0}}
@@ -589,6 +589,7 @@ export default function OneButtonArena() {
         @keyframes countPop   {0%{transform:scale(2);opacity:0}40%{transform:scale(.9);opacity:1}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
         @keyframes glitch     {0%,100%{text-shadow:2px 0 #ff375f,-2px 0 #0a84ff}25%{text-shadow:-2px 0 #ff375f,2px 0 #0a84ff}50%{text-shadow:2px 2px #ff375f,-2px -2px #0a84ff}}
         @keyframes heartbeat  {0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+        .arena-svg { width: min(72vh, 86vw); height: min(72vh, 86vw); max-width: 680px; max-height: 680px; display:block; }
       `}</style>
 
       {/* Scanline */}
@@ -690,32 +691,42 @@ export default function OneButtonArena() {
 
       {/* ── PLAYING ── */}
       {!showCalib && (gameState==="playing"||gameState==="hit"||gameState==="countdown") && (
-        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",
-          animation:shake?"shake .4s ease":"none",position:"relative",zIndex:10,
-          width:"100%",maxWidth:460,padding:"0 16px" }}>
+        <div style={{ position:"fixed",inset:0,display:"flex",flexDirection:"column",
+          alignItems:"center",justifyContent:"center",
+          animation:shake?"shake .4s ease":"none",zIndex:10,
+          padding:"clamp(8px,2vh,20px) clamp(12px,3vw,28px)" }}>
 
-          {/* HUD */}
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",width:"100%",marginBottom:10 }}>
+          {/* Exit button */}
+          <button onClick={()=>{ cancelAnimationFrame(animFrameRef.current); clearInterval(countdownRef.current); gameStateRef.current="menu"; setGameState("menu"); }}
+            style={{ position:"fixed",top:14,left:14,zIndex:200,
+              background:"#ffffff0f",border:"1px solid #ffffff1a",color:"#ffffff55",
+              fontFamily:FONT,fontSize:10,letterSpacing:2,padding:"5px 10px",cursor:"pointer",borderRadius:4 }}>
+            ← EXIT
+          </button>
+
+          {/* HUD — pinned to top */}
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+            width:"100%",maxWidth:"min(700px,90vw)",marginBottom:"clamp(4px,1vh,14px)",flexShrink:0 }}>
             <div>
-              <div style={{ fontSize:10,color:"#ffffff2a",letterSpacing:3,marginBottom:2 }}>SCORE</div>
-              <div style={{ fontFamily:DFONT,fontSize:28,color:"#fff",lineHeight:1 }}>{score.toLocaleString()}</div>
+              <div style={{ fontSize:"clamp(9px,1.2vw,11px)",color:"#ffffff2a",letterSpacing:3,marginBottom:2 }}>SCORE</div>
+              <div style={{ fontFamily:DFONT,fontSize:"clamp(20px,3.5vw,40px)",color:"#fff",lineHeight:1 }}>{score.toLocaleString()}</div>
               {highScore>0&&score>0&&score>=highScore&&(
-                <div style={{ fontSize:9,color:"#ffd60a",letterSpacing:2,marginTop:2 }}>★ NEW BEST</div>
+                <div style={{ fontSize:"clamp(8px,1vw,10px)",color:"#ffd60a",letterSpacing:2,marginTop:2 }}>★ NEW BEST</div>
               )}
             </div>
             <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:10,color:"#ffffff2a",letterSpacing:3,marginBottom:3 }}>LEVEL</div>
-              <div style={{ fontFamily:DFONT,fontSize:24,color:"#0a84ff",lineHeight:1 }}>{level}</div>
-              <div style={{ width:68,height:3,background:"#ffffff18",borderRadius:2,marginTop:5,overflow:"hidden" }}>
+              <div style={{ fontSize:"clamp(9px,1.2vw,11px)",color:"#ffffff2a",letterSpacing:3,marginBottom:3 }}>LEVEL</div>
+              <div style={{ fontFamily:DFONT,fontSize:"clamp(18px,3vw,36px)",color:"#0a84ff",lineHeight:1 }}>{level}</div>
+              <div style={{ width:"clamp(56px,8vw,96px)",height:3,background:"#ffffff18",borderRadius:2,marginTop:4,overflow:"hidden" }}>
                 <div style={{ height:"100%",width:progressPct,background:"#0a84ff",borderRadius:2,transition:"width .3s" }}/>
               </div>
             </div>
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:18,marginBottom:3,animation:lives===1?"heartbeat .5s infinite":"none" }}>
+              <div style={{ fontSize:"clamp(15px,2.5vw,24px)",marginBottom:3,animation:lives===1?"heartbeat .5s infinite":"none" }}>
                 {[0,1,2].map(i=><span key={i} style={{ opacity:i<lives?1:.14,marginLeft:2 }}>❤️</span>)}
               </div>
               {combo>=2&&(
-                <div style={{ fontFamily:DFONT,fontSize:12,letterSpacing:1,
+                <div style={{ fontFamily:DFONT,fontSize:"clamp(10px,1.6vw,17px)",letterSpacing:1,
                   color:combo>=9?"#ff375f":combo>=5?"#bf5af2":combo>=3?"#30d158":"#ffd60a",
                   textShadow:"0 0 12px currentColor" }}>×{combo} COMBO</div>
               )}
@@ -725,30 +736,32 @@ export default function OneButtonArena() {
           {/* #8 Hit / near-miss label */}
           {hitLabel && (
             <div key={hitLabel.id} style={{
-              position:"absolute",top:70,left:"50%",transform:"translateX(-50%)",
-              fontFamily:DFONT,fontSize:hitLabel.label==="SO CLOSE"?20:25,color:hitLabel.color,
+              position:"fixed",top:"16%",left:"50%",transform:"translateX(-50%)",
+              fontFamily:DFONT,fontSize:"clamp(18px,3vw,32px)",color:hitLabel.color,
               letterSpacing:hitLabel.label==="SO CLOSE"?3:4,pointerEvents:"none",zIndex:30,
-              textShadow:`0 0 16px ${hitLabel.color}`,
+              textShadow:`0 0 16px ${hitLabel.color}`,whiteSpace:"nowrap",
               animation:hitLabel.label==="SO CLOSE"?"nearPop .75s ease forwards":"hitPop .7s ease forwards"
             }}>{hitLabel.label}</div>
           )}
 
           {/* Combo flare */}
           {comboFlare && (
-            <div style={{ position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",
-              fontFamily:DFONT,fontSize:48,color:combo>=9?"#ff375f":"#bf5af2",
+            <div style={{ position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+              fontFamily:DFONT,fontSize:"clamp(36px,6vw,72px)",color:combo>=9?"#ff375f":"#bf5af2",
               pointerEvents:"none",zIndex:31,textShadow:"0 0 40px currentColor",
               animation:"comboFlare .8s ease forwards" }}>COMBO!</div>
           )}
 
-          {/* #6 Responsive arena */}
+          {/* Arena — takes all remaining space, perfectly centered */}
           <div ref={arenaWrapRef} onClick={handleTouch}
-            style={{ cursor:"crosshair",width:"100%",touchAction:"none" }}>
+            style={{ cursor:"crosshair",touchAction:"none",flexShrink:0,
+              display:"flex",alignItems:"center",justifyContent:"center" }}>
             <Arena radius={radius} combo={combo} gameState={gameState}
               lastHit={lastHit} config={config}/>
           </div>
 
-          <div style={{ marginTop:12,fontSize:12,color:"#ffffff22",letterSpacing:3,
+          <div style={{ marginTop:"clamp(6px,1vh,12px)",fontSize:"clamp(10px,1.2vw,12px)",
+            color:"#ffffff22",letterSpacing:3,flexShrink:0,
             animation:gameState==="playing"?"pulse 1s ease-in-out infinite":"none" }}>
             {gameState==="playing"?"— TAP OR SPACE —":"●●●"}
           </div>
